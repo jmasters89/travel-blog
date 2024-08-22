@@ -11,7 +11,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 @views.route('/', methods=['GET', 'POST'])
-@login_required
 def home():
     if request.method == 'POST':
         note = request.form.get('note')
@@ -19,36 +18,30 @@ def home():
         if len(note) < 1:
             flash('Note cannot be empty', category='error')
         else:
-            new_note = Note(data=note, user_id=current_user.id)
+            new_note = Note(data=note)
             db.session.add(new_note)
             db.session.commit()
             flash('Note added', category='success')
-            
-    return render_template("home.html", user=current_user)
+    
+    notes = Note.query.all()
+    
+    if current_user.is_authenticated:
+        return render_template("home.html", user=current_user, notes=notes)
+    else:
+        return render_template("home.html", user=None, notes=notes)
 
 @views.route('/delete-note', methods=['POST'])
-@login_required
 def delete_note():
-    logger.debug(f"Received delete note request. Data: {request.data}")
     try:
         data = json.loads(request.data)
-        logger.debug(f"Parsed data: {data}")
         note_id = data.get('noteID') or data.get('noteId')  # Check for both keys
-        logger.debug(f"Note ID to delete: {note_id}")
-        if note_id:
-            note = Note.query.get(note_id)
-            logger.debug(f"Found note: {note}")
-            if note and note.user_id == current_user.id:
-                db.session.delete(note)
-                db.session.commit()
-                logger.debug("Note deleted successfully")
-                return jsonify({'result': 'success'})
-            else:
-                logger.warning("Note not found or unauthorized")
-                return jsonify({'result': 'fail', 'error': 'Note not found or unauthorized'})
+        note = Note.query.get(note_id)
+        if note:
+            db.session.delete(note)
+            db.session.commit()
+            return jsonify({'result': 'success'})
         else:
-            logger.warning("NoteID not provided")
-            return jsonify({'result': 'fail', 'error': 'NoteID not provided'})
+            return jsonify({'result': 'fail', 'error': 'Note not found'})
     except Exception as e:
-        logger.error(f"An error occurred: {str(e)}")
+        logger.error(f"Error in delete_note: {str(e)}")
         return jsonify({'result': 'fail', 'error': str(e)}), 500
