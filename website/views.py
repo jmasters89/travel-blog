@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, flash, request, jsonify, current_app
+from flask import Blueprint, render_template, flash, request, jsonify, current_app, redirect, url_for
 from flask_login import login_required, current_user
 from .models import Note, Post
 from . import mongo
@@ -99,3 +99,11 @@ def create_post():
 def feed():
     posts = Post.find_all()
     return render_template("feed.html", user=current_user, posts=posts)
+
+@views.route('/vietnam', methods=['GET'])
+def vietnam():
+    return render_template("vietnam.html")
+
+@views.route('/thailand')
+def thailand():
+    return render_template("thailand.html")
