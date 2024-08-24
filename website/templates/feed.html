@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Feed</h1>
+{% for post in posts %}
+    <div class="post">
+        <p>{{ post.content }}</p>
+        {% if post.image_filename %}
+            <img src="{{ url_for('static', filename='uploads/' ~ post.image_filename) }}" alt="Post Image">
+        {% endif %}
+        <small>Posted by {{ post.user_id }} on {{ post.date }}</small>
+    </div>
+{% endfor %}
+{% endblock %}

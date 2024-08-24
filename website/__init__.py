@@ -1,17 +1,21 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from os import path
+from flask_pymongo import PyMongo
 from flask_login import LoginManager
+import os
 
-db = SQLAlchemy()
-DB_NAME = "database.db"
-
+mongo = PyMongo()
 
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = "secret"  # Replace with your own secret key
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_NAME}"
-    db.init_app(app)
+    app.config["MONGO_URI"] = "mongodb://localhost:27017/flask_starter_web_app"
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
+    
+    mongo.init_app(app)
+
+    # Ensure the upload folder exists
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
 
     from .views import views
     from .auth import auth
@@ -19,9 +23,7 @@ def create_app():
     app.register_blueprint(views, url_prefix="/")
     app.register_blueprint(auth, url_prefix="/")
 
-    from .models import User, Note
-
-    create_database(app)
+    from .models import User
 
     login_manager = LoginManager()
     login_manager.login_view = "auth.login"
@@ -29,13 +31,7 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        # Ensure User model has a find_by_id method
+        return User.find_by_id(user_id)
 
     return app
-
-
-def create_database(app):
-    with app.app_context():
-        if not path.exists("website/" + DB_NAME):
-            db.create_all()
-            print("Created Database!")

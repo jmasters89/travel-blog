@@ -1,0 +1,32 @@
+.note-list {
+    padding-left: 0;
+}
+
+.note-textarea {
+    margin: 0 auto;
+    display: block;
+}
+
+.note-submit-button {
+    margin-top: 10px;
+}
+
+.note-content {
+    word-break: break-word;
+}
+
+.note-metadata {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.delete-note {
+    padding-left: 10px;
+}
+
+@media (max-width: 575.98px) {
+    .note-metadata {
+        text-align: left;
+        margin-top: 10px;
+    }
+}
