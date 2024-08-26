@@ -7,6 +7,7 @@ import json
 import logging
 from werkzeug.utils import secure_filename
 import os
+import traceback
 
 views = Blueprint('views', __name__)
 
@@ -41,36 +42,34 @@ def home():
 @login_required
 def delete_note():
     try:
-        data = json.loads(request.data)
-        logger.debug(f"Received data for delete_note: {data}")
-        note_id = data.get('noteId')  # Change 'noteID' to 'noteId' to match frontend
+        note_id = request.json.get('noteId')
+        print("Received delete request for note ID:", note_id)  # Add this line
+        if not note_id:
+            return jsonify({'success': False, 'error': 'No note ID provided'}), 400
 
-        if note_id is None:
-            logger.error('Note ID is not provided')
-            raise ValueError('Note ID is not provided')
+        
+        object_id = ObjectId(note_id)
 
-        if not ObjectId.is_valid(note_id):
-            logger.error(f"{note_id} is not a valid ObjectId")
-            raise ValueError(f"{note_id} is not a valid ObjectId")
-
-        result = mongo.db.notes.delete_one({'_id': ObjectId(note_id), 'user_id': ObjectId(current_user.get_id())})
-
-        if result.deleted_count > 0:
-            logger.info(f"Note {note_id} deleted successfully")
-            return jsonify({'result': 'success'})
+        result = mongo.db.notes.delete_one({'_id': object_id, 'user_id': ObjectId(current_user.get_id())})
+        if result.deleted_count == 1:
+            return jsonify({'success': True})
         else:
-            logger.error(f"Note {note_id} not found or unauthorized")
-            return jsonify({'result': 'fail', 'error': 'Note not found or unauthorized'})
-
+            return jsonify({'success': False, 'error': 'Note not found or not authorized'}), 404
     except Exception as e:
-        logger.error(f"Error in delete_note: {str(e)}")
-        return jsonify({'result': 'fail', 'error': str(e)}), 500
+        print(f"Error in delete_note: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @views.route('/get-notes', methods=['GET'])
 @login_required
 def get_notes():
     notes = Note.find_by_user_id(current_user.get_id())
-    return jsonify([{'id': str(note['_id']), 'data': note['data'], 'date': note['date'].isoformat()} for note in notes])
+    note_list = [{
+        '_id': str(note['_id']),
+        'data': note['data'],
+        'date': note['date'].isoformat()
+    } for note in notes]
+    print("Sending notes:", note_list)  # Add this line
+    return jsonify(note_list)
 
 @views.route('/create-post', methods=['GET', 'POST'])
 @login_required

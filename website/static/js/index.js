@@ -1,9 +1,33 @@
 function deleteNote(noteId) {
+  console.log("Attempting to delete note with ID:", noteId);
+  if (!noteId) {
+    console.error('Invalid note ID');
+    return;
+  }
   fetch("/delete-note", {
     method: "POST",
     body: JSON.stringify({ noteId: noteId }),
-  }).then((_res) => {
-    window.location.href = "/";
+    headers: {
+      'Content-Type': 'application/json'
+    },
+  }).then((res) => {
+    if (res.ok) {
+      return res.json();
+    }
+    return res.text().then(text => {
+      throw new Error(`Server error: ${res.status} ${res.statusText}\n${text}`);
+    });
+  }).then((data) => {
+    if (data.success) {
+      const noteElement = document.getElementById(`note-${noteId}`);
+      if (noteElement) {
+        noteElement.remove();
+      }
+    } else {
+      console.error('Failed to delete note:', data.error);
+    }
+  }).catch((error) => {
+    console.error('Error:', error);
   });
 }
 
@@ -32,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const noteList = document.getElementById("notes");
         noteList.innerHTML = "";
         data.forEach((note) => {
+          console.log("Rendering note with ID:", note._id);
           const li = document.createElement("li");
           li.className = "list-group-item";
           li.id = `note-${note._id}`;
