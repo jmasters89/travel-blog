@@ -1,12 +1,12 @@
 from . import mongo
 from flask_login import UserMixin
 from bson.objectid import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 
 class Note:
     def __init__(self, data, user_id):
         self.data = data
-        self.date = datetime.utcnow()
+        self.date = datetime.now(timezone.utc)
         self.user_id = user_id
 
     @classmethod
