@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{% block content %}
-<h1>Create Post</h1>
-<form method="POST" enctype="multipart/form-data">
-    <textarea name="content" placeholder="What's on your mind?" required></textarea>
-    <input type="file" name="file" accept="image/*">
-    <button type="submit">Post</button>
-</form>
-{% endblock %}
