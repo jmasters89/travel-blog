@@ -30,3 +30,23 @@
         margin-top: 10px;
     }
 }
+
+.hero-image {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    height: 300px;
+    position: relative;
+}
+
+.hero-text {
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    background-color: rgba(112, 112, 112, 0.5); /* Semi-transparent grey */
+    padding: 10px;
+    border-radius: 30px; /* Increased from 5px to 15px for more rounded corners */
+}

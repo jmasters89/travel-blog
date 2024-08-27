@@ -44,6 +44,13 @@
       </div>
     </nav>
 
+    <!-- Add hero image section -->
+    <div class="hero-image" style="background-image: url('{{ url_for('static', filename='img/' + request.endpoint.split('.')[-1] + '.jpg') }}');">
+      <div class="hero-text">
+        <h1>{% block hero_title %}Welcome{% endblock %}</h1>
+      </div>
+    </div>
+
     {% with messages = get_flashed_messages(with_categories=true) %} {% if
     messages %} {% for category, message in messages %} {% if category ==
     'error' %}
