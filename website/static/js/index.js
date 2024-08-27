@@ -4,31 +4,27 @@ function deleteNote(noteId) {
     console.error('Invalid note ID');
     return;
   }
+
   fetch("/delete-note", {
     method: "POST",
-    body: JSON.stringify({ noteId: noteId }),
-    headers: {
-      'Content-Type': 'application/json'
-    },
-  }).then((res) => {
-    if (res.ok) {
-      return res.json();
-    }
-    return res.text().then(text => {
-      throw new Error(`Server error: ${res.status} ${res.statusText}\n${text}`);
-    });
-  }).then((data) => {
-    if (data.success) {
-      const noteElement = document.getElementById(`note-${noteId}`);
-      if (noteElement) {
-        noteElement.remove();
+    body: JSON.stringify({ noteId }),
+    headers: { 'Content-Type': 'application/json' },
+  })
+    .then((res) => {
+      if (res.ok) return res.json();
+      return res.text().then(text => {
+        throw new Error(`Server error: ${res.status} ${res.statusText}\n${text}`);
+      });
+    })
+    .then((data) => {
+      if (data.success) {
+        const noteElement = document.getElementById(`note-${noteId}`);
+        if (noteElement) noteElement.remove();
+      } else {
+        console.error('Failed to delete note:', data.error);
       }
-    } else {
-      console.error('Failed to delete note:', data.error);
-    }
-  }).catch((error) => {
-    console.error('Error:', error);
-  });
+    })
+    .catch((error) => console.error('Error:', error));
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -47,9 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function loadNotes() {
     fetch("/get-notes")
       .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
+        if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
       })
       .then((data) => {
@@ -62,9 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
           li.id = `note-${note._id}`;
           li.innerHTML = `
             <div class="row align-items-center">
-              <div class="col note-content">
-                ${note.data}
-              </div>
+              <div class="col note-content">${note.data}</div>
               <div class="col-auto note-metadata">
                 <small class="text-muted mr-2">${new Date(note.date).toLocaleString()}</small>
                 <button type="button" class="close delete-note" onclick="deleteNote('${note._id}')">
@@ -76,9 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
           noteList.appendChild(li);
         });
       })
-      .catch((error) => {
-        console.error('Error loading notes:', error);
-      });
+      .catch((error) => console.error('Error loading notes:', error));
   }
 
   loadNotes();
