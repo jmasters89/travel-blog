@@ -148,3 +148,24 @@ def delete_journal_entry():
     id = request.json.get("id")
     result = mongo.db.journal_entries.delete_one({"_id": ObjectId(id), "author": current_user.email})  # Use email instead of username
     return jsonify({"success": result.deleted_count > 0})
+
+@views.route('/create-note', methods=['POST'])
+@login_required
+def create_note():
+    try:
+        content = request.json.get('content')
+        if not content:
+            return jsonify({'success': False, 'error': 'Content cannot be empty'}), 400
+
+        user_id = current_user.get_id()
+        new_note = Note.create(data=content, user_id=user_id)
+        return jsonify({
+            'success': True,
+            'note': {
+                '_id': str(new_note.id),
+                'data': new_note.data,
+                'date': new_note.date.isoformat()
+            }
+        }), 201
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500

@@ -114,3 +114,7 @@
 .form-button:hover {
   background-color: var(--bs-secondary);
 }
+
+.margin-top {
+    margin-top: 20px; /* Adjust the value as needed */
+  }

@@ -68,12 +68,16 @@ document.addEventListener('DOMContentLoaded', function() {
       .catch(error => console.error('Error deleting journal entry:', error));
   }
 
+  let postCount = 0; // Global variable to keep track of post count
+
   function createEntryElement(entry) {
+    postCount++; // Increment the post count
+
     const entryDiv = document.createElement('div');
     entryDiv.id = `entry-${entry._id}`;
     entryDiv.className = 'card mb-3 journal-entry';
     entryDiv.innerHTML = `
-      <h3 class="card-header">Entry ID: ${entry._id}</h3>
+      <h3 class="card-header">Post #${postCount}</h3> <!-- Updated to show Post # -->
       <div class="card-body">
         <h6 class="card-subtitle mb-2 text-muted">By ${entry.author} on ${new Date(entry.timestamp).toLocaleString()}</h6>
         <p class="card-text">${entry.content}</p>

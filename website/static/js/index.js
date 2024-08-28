@@ -27,14 +27,55 @@ function deleteNote(noteId) {
     .catch((error) => console.error('Error:', error));
 }
 
+function createNote(content) {
+  fetch("/create-note", {
+    method: "POST",
+    body: JSON.stringify({ content }),
+    headers: { 'Content-Type': 'application/json' },
+  })
+  .then((res) => {
+    if (res.ok) return res.json();
+    return res.text().then(text => {
+      throw new Error(`Server error: ${res.status} ${res.statusText}\n${text}`);
+    });
+  })
+  .then((data) => {
+    if (data.success) {
+      const noteList = document.getElementById("notes");
+      const li = document.createElement("li");
+      li.className = "list-group-item";
+      li.id = `note-${data.note._id}`;
+      li.innerHTML = `
+        <div class="row align-items-center">
+          <div class="col note-content">${data.note.data}</div>
+          <div class="col-auto note-metadata">
+            <small class="text-muted mr-2">${new Date(data.note.date).toLocaleString()}</small>
+            <button type="button" class="close delete-note" onclick="deleteNote('${data.note._id}')">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        </div>
+      `;
+      noteList.appendChild(li);
+    } else {
+      console.error('Failed to create note:', data.error);
+    }
+  })
+  .catch((error) => console.error('Error:', error));
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  const noteForm = document.querySelector('form');
-  const noteInput = document.getElementById('note');
+  const noteForm = document.getElementById('add-note-form');
+  const noteInput = document.getElementById('new-note');
 
   if (noteForm && noteInput) {
     noteForm.addEventListener('submit', function(e) {
-      if (!noteInput.value.trim()) {
-        e.preventDefault();
+      e.preventDefault(); // Prevent the default form submission
+      const noteContent = noteInput.value.trim();
+      if (noteContent) {
+        createNote(noteContent);
+        noteInput.value = ''; // Clear the input field
+      } else {
         alert('Please enter a note before submitting.');
       }
     });
