@@ -25,30 +25,35 @@ class Note:
         return list(mongo.db.notes.find({'user_id': ObjectId(user_id)}))
 
 class User(UserMixin):
-    def __init__(self, email, password, first_name, _id=None):
+    def __init__(self, id, email, password, first_name):
+        self.id = id
         self.email = email
         self.password = password
         self.first_name = first_name
-        self._id = ObjectId(_id) if _id else None
 
     def get_id(self):
-        return str(self._id)
+        return str(self.id)
 
     @classmethod
     def create(cls, email, password, first_name):
-        user = cls(email, password, first_name)
         result = mongo.db.users.insert_one({
-            'email': user.email,
-            'password': user.password,
-            'first_name': user.first_name
+            'email': email,
+            'password': password,
+            'first_name': first_name
         })
-        user._id = result.inserted_id
-        return user
+        return cls(str(result.inserted_id), email, password, first_name)
 
     @classmethod
     def find_by_email(cls, email):
         user_data = mongo.db.users.find_one({'email': email})
-        return cls(**user_data) if user_data else None
+        if user_data:
+            return cls(
+                str(user_data['_id']),
+                user_data['email'],
+                user_data['password'],
+                user_data['first_name']
+            )
+        return None
 
     @classmethod
     def find_by_id(cls, user_id):
@@ -57,7 +62,14 @@ class User(UserMixin):
         except:
             return None
         user_data = mongo.db.users.find_one({'_id': object_id})
-        return cls(**user_data) if user_data else None
+        if user_data:
+            return cls(
+                str(user_data['_id']),
+                user_data['email'],
+                user_data['password'],
+                user_data['first_name']
+            )
+        return None
 
 class Post:
     def __init__(self, content, user_id, image_filename=None):

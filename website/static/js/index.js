@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const noteForm = document.querySelector('form');
   const noteInput = document.getElementById('note');
 
-  if (noteForm) {
+  if (noteForm && noteInput) {
     noteForm.addEventListener('submit', function(e) {
       if (!noteInput.value.trim()) {
         e.preventDefault();

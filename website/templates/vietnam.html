@@ -3,5 +3,12 @@
 {% block hero_title %}Discover Vietnam{% endblock %}
 
 {% block content %}
-  <!-- Your Vietnam page content here -->
+  <div id="journal-entries"></div>
+  
+  <form id="journal-form">
+    <textarea id="journal-content" required></textarea>
+    <button type="submit">Add Entry</button>
+  </form>
+
+  <script src="{{ url_for('static', filename='js/journal.js') }}"></script>
 {% endblock %}

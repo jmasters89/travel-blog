@@ -8,6 +8,7 @@ import logging
 from werkzeug.utils import secure_filename
 import os
 import traceback
+from datetime import datetime
 
 views = Blueprint('views', __name__)
 
@@ -106,3 +107,44 @@ def vietnam():
 @views.route('/thailand')
 def thailand():
     return render_template("thailand.html")
+
+@views.route("/get-journal-entries")
+@login_required
+def get_journal_entries():
+    entries = list(mongo.db.journal_entries.find().sort("timestamp", -1))
+    for entry in entries:
+        entry["_id"] = str(entry["_id"])
+    return jsonify(entries)
+
+@views.route("/create-journal-entry", methods=["POST"])
+@login_required
+def create_journal_entry():
+    content = request.json.get("content")
+    entry = {
+        "content": content,
+        "author": current_user.email,  # Use email instead of username
+        "timestamp": datetime.utcnow()
+    }
+    result = mongo.db.journal_entries.insert_one(entry)
+    entry["_id"] = str(result.inserted_id)
+    return jsonify(entry)
+
+@views.route("/update-journal-entry", methods=["POST"])
+@login_required
+def update_journal_entry():
+    id = request.json.get("id")
+    content = request.json.get("content")
+    mongo.db.journal_entries.update_one(
+        {"_id": ObjectId(id), "author": current_user.email},  # Use email instead of username
+        {"$set": {"content": content}}
+    )
+    updated_entry = mongo.db.journal_entries.find_one({"_id": ObjectId(id)})
+    updated_entry["_id"] = str(updated_entry["_id"])
+    return jsonify(updated_entry)
+
+@views.route("/delete-journal-entry", methods=["POST"])
+@login_required
+def delete_journal_entry():
+    id = request.json.get("id")
+    result = mongo.db.journal_entries.delete_one({"_id": ObjectId(id), "author": current_user.email})  # Use email instead of username
+    return jsonify({"success": result.deleted_count > 0})
