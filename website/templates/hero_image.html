@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block hero_image %}
+<div class="hero-image" style="background-image: url('{{ url_for('static', filename='img/' + request.endpoint.split('.')[-1] + '.jpg') }}');">
+  <div class="hero-text">
+    <h1>{% block hero_title %}Welcome{% endblock %}</h1>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+  <!-- Content specific to pages with hero image -->
+{% endblock %}

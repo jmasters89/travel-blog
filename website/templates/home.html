@@ -1,23 +1,7 @@
-{% extends "base.html" %}
-{% block title %} Home {% endblock %}
+{% extends "hero_image.html" %}
+
+{% block hero_title %}Welcome to Our Travel Site{% endblock %}
+
 {% block content %}
-
-<h1 class="text-center">Travel Plans</h1>
-<ul class="list-group list-group-flush note-list" id="notes">
-    <!-- Notes will be loaded here by JavaScript -->
-</ul>
-{% if user %}
-    <form method="POST">
-        <div class="form-group">
-            <textarea id="note" name="note" class="form-control w-100 note-textarea"></textarea>
-        </div>
-        <div class="form-group text-center">
-            <button type="submit" class="btn btn-primary note-submit-button">Add Note</button>
-        </div>
-    </form>
-{% endif %}
-{% endblock %}
-
-{% block javascript %}
-    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+  <!-- Your home page content here -->
 {% endblock %}
