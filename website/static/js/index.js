@@ -41,13 +41,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function loadNotes() {
+    const noteList = document.getElementById("notes");
+    if (!noteList) {
+      console.error("Element with ID 'notes' not found");
+      return;
+    }
+
     fetch("/get-notes")
       .then((response) => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
       })
       .then((data) => {
-        const noteList = document.getElementById("notes");
         noteList.innerHTML = "";
         data.forEach((note) => {
           console.log("Rendering note with ID:", note._id);
@@ -71,5 +76,6 @@ document.addEventListener('DOMContentLoaded', function() {
       .catch((error) => console.error('Error loading notes:', error));
   }
 
-  loadNotes();
+  // Call loadNotes after a short delay to ensure DOM is ready
+  setTimeout(loadNotes, 100);
 });
