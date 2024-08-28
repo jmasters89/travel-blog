@@ -71,16 +71,19 @@ document.addEventListener('DOMContentLoaded', function() {
   function createEntryElement(entry) {
     const entryDiv = document.createElement('div');
     entryDiv.id = `entry-${entry._id}`;
-    entryDiv.className = 'journal-entry';
+    entryDiv.className = 'card mb-3 journal-entry';
     entryDiv.innerHTML = `
-      <p>${entry.content}</p>
-      <p><small>By ${entry.author} on ${new Date(entry.timestamp).toLocaleString()}</small></p>
-      <button class="edit-btn" onclick="editEntry('${entry._id}', '${entry.content}')">
-        <i class="fas fa-edit"></i>
-      </button>
-      <button class="delete-btn" onclick="deleteJournalEntry('${entry._id}')">
-        <i class="fas fa-trash-alt"></i>
-      </button>
+      <h3 class="card-header">Entry ID: ${entry._id}</h3>
+      <div class="card-body">
+        <h6 class="card-subtitle mb-2 text-muted">By ${entry.author} on ${new Date(entry.timestamp).toLocaleString()}</h6>
+        <p class="card-text">${entry.content}</p>
+        <button class="btn btn-primary edit-btn" onclick="editEntry('${entry._id}', '${entry.content.replace(/'/g, "\\'")}')">
+          <i class="fas fa-edit"></i> Edit
+        </button>
+        <button class="btn btn-danger delete-btn" onclick="deleteJournalEntry('${entry._id}')">
+          <i class="fas fa-trash-alt"></i> Delete
+        </button>
+      </div>
     `;
     return entryDiv;
   }
