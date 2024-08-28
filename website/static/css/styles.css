@@ -27,8 +27,8 @@
     white-space: nowrap;
     overflow: visible; /* Allow glow to overflow */
     display: inline-block; /* Contain the glow within the element */
-    filter: drop-shadow(0 0 10px #ff69b4)
-            drop-shadow(0 0 20px #ff69b4);
+    filter: drop-shadow(0 0 10px #eb6864)
+            drop-shadow(0 0 20px #eb6864);
 }
 
 @media screen and (max-width: 768px) {
