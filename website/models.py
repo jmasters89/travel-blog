@@ -2,6 +2,8 @@ from . import mongo
 from flask_login import UserMixin
 from bson.objectid import ObjectId
 from datetime import datetime, timezone
+from werkzeug.utils import secure_filename
+import os
 
 class Note:
     def __init__(self, data, user_id, author):
@@ -97,20 +99,28 @@ class Post:
         return list(mongo.db.posts.find().sort('date', -1))
 
 class JournalEntry:
-    def __init__(self, content, author, country, timestamp=None):
+    def __init__(self, content, author, country, timestamp=None, photo_filename=None):
         self.content = content
         self.author = author
         self.country = country
         self.timestamp = timestamp or datetime.utcnow()
+        self.photo_filename = photo_filename
 
     @classmethod
-    def create(cls, content, author, country):
-        entry = cls(content, author, country)
+    def create(cls, content, author, country, photo=None):
+        photo_filename = None
+        if photo:
+            filename = secure_filename(photo.filename)
+            photo_filename = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{filename}"
+            photo.save(os.path.join('website', 'static', 'uploads', photo_filename))
+
+        entry = cls(content, author, country, photo_filename=photo_filename)
         result = mongo.db.journal_entries.insert_one({
             'content': entry.content,
             'author': entry.author,
             'country': entry.country,
-            'timestamp': entry.timestamp
+            'timestamp': entry.timestamp,
+            'photo_filename': entry.photo_filename
         })
         entry.id = result.inserted_id
         return entry

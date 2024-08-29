@@ -107,59 +107,102 @@ def get_journal_entries(country):
         entries = JournalEntry.find_by_country(country)
         result = []
         for entry in entries:
+            author_user = User.find_by_id(entry["author"])
+            author_email = author_user.email if author_user else "Unknown"
             entry_dict = {
                 "_id": str(entry["_id"]),
                 "content": entry["content"],
-                "author": entry["author"],
+                "author_id": entry["author"],
+                "author_email": author_email,
                 "country": entry["country"],
                 "timestamp": entry["timestamp"].isoformat(),
-                "is_author": current_user.is_authenticated and entry["author"] == current_user.email
+                "is_author": current_user.is_authenticated and str(entry["author"]) == str(current_user.id),
+                "photo": f"/static/uploads/{entry['photo_filename']}" if entry.get('photo_filename') else None
             }
             result.append(entry_dict)
+        print(f"Entries: {result}")  # Add this line for debugging
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in get_journal_entries: {str(e)}")
-        logger.error(traceback.format_exc())
+        print(f"Error in get_journal_entries: {str(e)}")
         return jsonify({"error": f"An error occurred while fetching journal entries: {str(e)}"}), 500
 
 @views.route("/create-journal-entry", methods=["POST"])
 @login_required
 def create_journal_entry():
+    content = request.form.get('content')
+    country = request.form.get('country')
+    photo = request.files.get('photo')
+
+    if not content:
+        return jsonify({"error": "Content is required"}), 400
+
     try:
-        content = request.json.get("content")
-        country = request.json.get("country")
-        entry = JournalEntry.create(content, current_user.email, country)
+        entry = JournalEntry.create(content, str(current_user.id), country, photo)
         return jsonify({
             "_id": str(entry.id),
             "content": entry.content,
-            "author": entry.author,
+            "author_id": entry.author,
+            "author_email": current_user.email,
             "country": entry.country,
             "timestamp": entry.timestamp.isoformat(),
+            "photo": f"/static/uploads/{entry.photo_filename}" if entry.photo_filename else None,
             "is_author": True
-        }), 200
+        }), 201
     except Exception as e:
-        logger.error(f"Error creating journal entry: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(f"Error creating journal entry: {str(e)}")
+        return jsonify({"error": "An error occurred while creating the journal entry"}), 500
 
 @views.route("/update-journal-entry", methods=["POST"])
 @login_required
 def update_journal_entry():
-    id = request.json.get("id")
-    content = request.json.get("content")
-    mongo.db.journal_entries.update_one(
-        {"_id": ObjectId(id), "author": current_user.email},  # Use email instead of username
-        {"$set": {"content": content}}
-    )
-    updated_entry = mongo.db.journal_entries.find_one({"_id": ObjectId(id)})
-    updated_entry["_id"] = str(updated_entry["_id"])
-    return jsonify(updated_entry)
+    try:
+        id = request.json.get("id")
+        content = request.json.get("content")
+        
+        if not id or not content:
+            return jsonify({"error": "Missing id or content"}), 400
+
+        result = mongo.db.journal_entries.update_one(
+            {"_id": ObjectId(id), "author": str(current_user.id)},
+            {"$set": {"content": content}}
+        )
+        
+        if result.modified_count > 0:
+            updated_entry = mongo.db.journal_entries.find_one({"_id": ObjectId(id)})
+            if updated_entry:
+                updated_entry["_id"] = str(updated_entry["_id"])
+                return jsonify(updated_entry), 200
+            else:
+                return jsonify({"error": "Entry not found after update"}), 500
+        else:
+            return jsonify({"error": "No changes made or entry not found"}), 404
+
+    except Exception as e:
+        current_app.logger.error(f"Error updating journal entry: {str(e)}")
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 @views.route("/delete-journal-entry", methods=["POST"])
 @login_required
 def delete_journal_entry():
-    id = request.json.get("id")
-    result = mongo.db.journal_entries.delete_one({"_id": ObjectId(id), "author": current_user.email})  # Use email instead of username
-    return jsonify({"success": result.deleted_count > 0})
+    try:
+        id = request.json.get("id")
+        
+        if not id:
+            return jsonify({"success": False, "message": "Missing entry id"}), 400
+
+        result = mongo.db.journal_entries.delete_one({
+            "_id": ObjectId(id),
+            "author": str(current_user.id)
+        })
+        
+        if result.deleted_count > 0:
+            return jsonify({"success": True, "message": "Entry deleted successfully"}), 200
+        else:
+            return jsonify({"success": False, "message": "Entry not found or you don't have permission to delete it"}), 404
+
+    except Exception as e:
+        current_app.logger.error(f"Error deleting journal entry: {str(e)}")
+        return jsonify({"success": False, "message": f"An error occurred: {str(e)}"}), 500
 
 @views.route('/create-note', methods=['POST'])
 @login_required
