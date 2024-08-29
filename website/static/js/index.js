@@ -50,8 +50,8 @@ function createNote(content) {
           <div class="col note-content">${data.note.data}</div>
           <div class="col-auto note-metadata">
             <small class="text-muted mr-2">${new Date(data.note.date).toLocaleString()}</small>
-            <button type="button" class="close delete-note" onclick="deleteNote('${data.note._id}')">
-              <span aria-hidden="true">&times;</span>
+            <button type="button" class="btn btn-danger btn-sm delete-btn" onclick="deleteNote('${data.note._id}')" title="Delete">
+              <i class="fas fa-trash-alt"></i>
             </button>
           </div>
         </div>
@@ -105,8 +105,9 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="col note-content">${note.data}</div>
               <div class="col-auto note-metadata">
                 <small class="text-muted mr-2">${new Date(note.date).toLocaleString()}</small>
-                <button type="button" class="close delete-note" onclick="deleteNote('${note._id}')">
-                  <span aria-hidden="true">&times;</span>
+                <small class="text-muted">by ${note.author}</small>
+                <button type="button" class="btn btn-danger btn-sm delete-btn" onclick="deleteNote('${note._id}')" title="Delete">
+                  <i class="fas fa-trash-alt"></i>
                 </button>
               </div>
             </div>

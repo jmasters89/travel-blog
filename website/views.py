@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, flash, request, jsonify, current_app, redirect, url_for
 from flask_login import login_required, current_user
-from .models import Note, Post
+from .models import Note, Post, User, JournalEntry  # Add JournalEntry here
 from . import mongo
 from bson import ObjectId
 import json
@@ -22,22 +22,9 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@views.route('/', methods=['GET', 'POST'])
-@login_required
+@views.route('/')
 def home():
-    if request.method == 'POST':
-        note = request.form.get('note')
-        
-        if len(note) < 1:
-            flash('Note cannot be empty', category='error')
-        else:
-            user_id = current_user.get_id()
-            new_note = Note.create(data=note, user_id=user_id)
-            flash('Note added', category='success')
-    
-    notes = Note.find_by_user_id(current_user.get_id())
-    
-    return render_template("home.html", user=current_user, notes=notes)
+    return render_template("home.html", user=current_user)
 
 @views.route('/delete-note', methods=['POST'])
 @login_required
@@ -61,15 +48,21 @@ def delete_note():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @views.route('/get-notes', methods=['GET'])
-@login_required
 def get_notes():
-    notes = Note.find_by_user_id(current_user.get_id())
-    note_list = [{
-        '_id': str(note['_id']),
-        'data': note['data'],
-        'date': note['date'].isoformat()
-    } for note in notes]
-    print("Sending notes:", note_list)  # Add this line
+    notes = list(mongo.db.notes.find().sort("date", -1).limit(100))
+    note_list = []
+    for note in notes:
+        author = 'Anonymous'
+        if 'user_id' in note:
+            user = User.find_by_id(str(note['user_id']))
+            if user:
+                author = user.first_name
+        note_list.append({
+            '_id': str(note['_id']),
+            'data': note['data'],
+            'date': note['date'].isoformat(),
+            'author': author
+        })
     return jsonify(note_list)
 
 @views.route('/create-post', methods=['GET', 'POST'])
@@ -102,32 +95,51 @@ def feed():
 
 @views.route('/vietnam', methods=['GET'])
 def vietnam():
-    return render_template("vietnam.html")
+    return render_template("vietnam.html", user=current_user, country="vietnam")
 
 @views.route('/thailand')
 def thailand():
-    return render_template("thailand.html")
+    return render_template("thailand.html", user=current_user, country="thailand")
 
-@views.route("/get-journal-entries")
-@login_required
-def get_journal_entries():
-    entries = list(mongo.db.journal_entries.find().sort("timestamp", -1))
-    for entry in entries:
-        entry["_id"] = str(entry["_id"])
-    return jsonify(entries)
+@views.route("/get-journal-entries/<country>")
+def get_journal_entries(country):
+    try:
+        entries = JournalEntry.find_by_country(country)
+        result = []
+        for entry in entries:
+            entry_dict = {
+                "_id": str(entry["_id"]),
+                "content": entry["content"],
+                "author": entry["author"],
+                "country": entry["country"],
+                "timestamp": entry["timestamp"].isoformat(),
+                "is_author": current_user.is_authenticated and entry["author"] == current_user.email
+            }
+            result.append(entry_dict)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error in get_journal_entries: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({"error": f"An error occurred while fetching journal entries: {str(e)}"}), 500
 
 @views.route("/create-journal-entry", methods=["POST"])
 @login_required
 def create_journal_entry():
-    content = request.json.get("content")
-    entry = {
-        "content": content,
-        "author": current_user.email,  # Use email instead of username
-        "timestamp": datetime.utcnow()
-    }
-    result = mongo.db.journal_entries.insert_one(entry)
-    entry["_id"] = str(result.inserted_id)
-    return jsonify(entry)
+    try:
+        content = request.json.get("content")
+        country = request.json.get("country")
+        entry = JournalEntry.create(content, current_user.email, country)
+        return jsonify({
+            "_id": str(entry.id),
+            "content": entry.content,
+            "author": entry.author,
+            "country": entry.country,
+            "timestamp": entry.timestamp.isoformat(),
+            "is_author": True
+        }), 200
+    except Exception as e:
+        logger.error(f"Error creating journal entry: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @views.route("/update-journal-entry", methods=["POST"])
 @login_required
@@ -158,13 +170,14 @@ def create_note():
             return jsonify({'success': False, 'error': 'Content cannot be empty'}), 400
 
         user_id = current_user.get_id()
-        new_note = Note.create(data=content, user_id=user_id)
+        new_note = Note.create(data=content, user_id=user_id, author=current_user.first_name)
         return jsonify({
             'success': True,
             'note': {
                 '_id': str(new_note.id),
                 'data': new_note.data,
-                'date': new_note.date.isoformat()
+                'date': new_note.date.isoformat(),
+                'author': current_user.first_name
             }
         }), 201
     except Exception as e:

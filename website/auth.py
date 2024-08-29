@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for
 from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
+from . import mongo
 
 auth = Blueprint('auth', __name__)
 
@@ -10,18 +11,15 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        
+
         user = User.find_by_email(email)
-        if user:
-            if check_password_hash(user.password, password):
-                flash('Logged in successfully!', category='success')
-                login_user(user, remember=True)
-                return redirect(url_for('views.home'))
-            else:
-                flash('Incorrect password, try again.', category='error')
+        if user and check_password_hash(user.password, password):
+            login_user(user, remember=True)
+            flash('Logged in successfully!', category='success')
+            return redirect(url_for('views.home'))
         else:
-            flash('Email does not exist.', category='error')
-                
+            flash('Incorrect email or password, try again.', category='error')
+
     return render_template("login.html", user=current_user)
 
 @auth.route('/logout')

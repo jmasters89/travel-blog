@@ -3,22 +3,26 @@
 {% block hero_title %}Masters of Escapism{% endblock %}
 
 {% block content %}
-  <div class="container mt-5">
-    <h2 class="text-center mb-4">Travel Bucket List</h2>
+  <div class="container mt-4">
+    <h1>Shared Notes</h1>
+    <ul id="notes" class="list-group mb-3"></ul>
     
-    <!-- List container -->
-    <div class="card shadow-sm">
-      <ul id="notes" class="list-group list-group-flush"></ul>
-    </div>
-    
-    <!-- Form for adding new items -->
-    <form id="add-note-form" class="mt-4">
-      <div class="input-group">
-        <input type="text" id="new-note" class="form-control" placeholder="Enter a new destination" required>
-        <button type="submit" class="btn btn-primary">
-          <i class="fa fa-paper-plane mr-2"></i> Add to List
-        </button>
-      </div>
-    </form>
+    {% if current_user.is_authenticated %}
+      <form id="add-note-form">
+        <div class="input-group mb-3">
+          <input type="text" id="new-note" class="form-control" placeholder="Enter a new note" required>
+          <div class="input-group-append">
+            <button class="btn btn-primary" type="submit">Add Note</button>
+          </div>
+        </div>
+      </form>
+    {% else %}
+      <p>Please <a href="{{ url_for('auth.login') }}">log in</a> to add notes.</p>
+    {% endif %}
   </div>
+
+{% endblock %}
+
+{% block javascript %}
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 {% endblock %}

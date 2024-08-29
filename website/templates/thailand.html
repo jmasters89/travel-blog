@@ -6,11 +6,15 @@
 {% block content %}
   <div id="journal-entries" class="margin-top"></div>
   
-  <form id="journal-form" class="form-container">
-    <textarea id="journal-content" class="form-textarea" required></textarea>
-    <button type="submit" class="btn btn-primary">Add Entry</button>
-  </form>
+  {% if current_user.is_authenticated %}
+    <form id="journal-form" class="form-container">
+      <textarea id="journal-content" class="form-textarea" required></textarea>
+      <button type="submit" class="btn btn-primary">Add Entry</button>
+    </form>
+  {% endif %}
 
-
+  <script>
+    const COUNTRY = "thailand";
+  </script>
   <script src="{{ url_for('static', filename='js/journal.js') }}"></script>
 {% endblock %}

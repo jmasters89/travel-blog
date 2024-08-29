@@ -53,22 +53,6 @@
     }
 }
 
-/* Custom styles for close buttons */
-.close {
-  font-size: 1.2rem; /* Adjust the size as needed */
-  color: var(--bs-primary); /* Use the primary color defined in your theme */
-  background: none; /* Remove any background */
-  border: none; /* Remove any border */
-  cursor: pointer; /* Change cursor to pointer */
-  padding: 0; /* Remove padding */
-  line-height: 1; /* Adjust line height */
-}
-
-.close:hover {
-  color: var(--bs-danger); /* Change color on hover */
-}
-
-
 .edit-btn, .delete-btn {
     background: none;
     border: none;

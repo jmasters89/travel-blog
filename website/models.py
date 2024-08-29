@@ -4,18 +4,20 @@ from bson.objectid import ObjectId
 from datetime import datetime, timezone
 
 class Note:
-    def __init__(self, data, user_id):
+    def __init__(self, data, user_id, author):
         self.data = data
         self.date = datetime.now(timezone.utc)
         self.user_id = user_id
+        self.author = author
 
     @classmethod
-    def create(cls, data, user_id):
-        note = cls(data, user_id)
+    def create(cls, data, user_id, author):
+        note = cls(data, user_id, author)
         result = mongo.db.notes.insert_one({
             'data': note.data,
             'date': note.date,
-            'user_id': ObjectId(user_id)
+            'user_id': ObjectId(user_id),
+            'author': author
         })
         note.id = result.inserted_id
         return note
@@ -93,3 +95,32 @@ class Post:
     @classmethod
     def find_all(cls):
         return list(mongo.db.posts.find().sort('date', -1))
+
+class JournalEntry:
+    def __init__(self, content, author, country, timestamp=None):
+        self.content = content
+        self.author = author
+        self.country = country
+        self.timestamp = timestamp or datetime.utcnow()
+
+    @classmethod
+    def create(cls, content, author, country):
+        entry = cls(content, author, country)
+        result = mongo.db.journal_entries.insert_one({
+            'content': entry.content,
+            'author': entry.author,
+            'country': entry.country,
+            'timestamp': entry.timestamp
+        })
+        entry.id = result.inserted_id
+        return entry
+
+    @classmethod
+    def find_by_country(cls, country):
+        try:
+            entries = list(mongo.db.journal_entries.find({'country': country}).sort('timestamp', -1))
+            print(f"Found {len(entries)} entries for country: {country}")
+            return entries
+        except Exception as e:
+            print(f"Error in find_by_country: {str(e)}")
+            raise
