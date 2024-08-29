@@ -1,1 +1,4 @@
 __pycache__
+
+# Ignore uploads in static directory
+static/uploads/
