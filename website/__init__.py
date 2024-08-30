@@ -1,18 +1,16 @@
 from flask import Flask
-from flask_pymongo import PyMongo
-from flask_login import LoginManager
 import os
 from datetime import datetime
-
-mongo = PyMongo()
 
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = "secret"  # Replace with your own secret key
-    app.config["MONGO_URI"] = "mongodb://localhost:27017/flask_starter_web_app"
+    # Remove this line
+    # app.config["MONGO_URI"] = "mongodb://localhost:27017/flask_starter_web_app"
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
     
-    mongo.init_app(app)
+    # Remove this line
+    # mongo.init_app(app)
 
     # Ensure the upload folder exists
     if not os.path.exists(app.config['UPLOAD_FOLDER']):

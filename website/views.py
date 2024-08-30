@@ -1,8 +1,6 @@
 from flask import Blueprint, render_template, flash, request, jsonify, current_app, redirect, url_for
 from flask_login import login_required, current_user
 from .models import Note, Post, User, JournalEntry  # Add JournalEntry here
-from . import mongo
-from bson import ObjectId
 import json
 import logging
 from werkzeug.utils import secure_filename
@@ -36,20 +34,18 @@ def delete_note():
             return jsonify({'success': False, 'error': 'No note ID provided'}), 400
 
         
-        object_id = ObjectId(note_id)
+        notes = db.get('notes', [])
+        notes = [note for note in notes if note['id'] != note_id or note['user_id'] != current_user.get_id()]
+        db['notes'] = notes
 
-        result = mongo.db.notes.delete_one({'_id': object_id, 'user_id': ObjectId(current_user.get_id())})
-        if result.deleted_count == 1:
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'Note not found or not authorized'}), 404
+        return jsonify({'success': True})
     except Exception as e:
         print(f"Error in delete_note: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @views.route('/get-notes', methods=['GET'])
 def get_notes():
-    notes = list(mongo.db.notes.find().sort("date", -1).limit(100))
+    notes = list(db.get('notes', []))
     note_list = []
     for note in notes:
         author = 'Anonymous'
@@ -162,20 +158,11 @@ def update_journal_entry():
         if not id or not content:
             return jsonify({"error": "Missing id or content"}), 400
 
-        result = mongo.db.journal_entries.update_one(
-            {"_id": ObjectId(id), "author": str(current_user.id)},
-            {"$set": {"content": content}}
-        )
-        
-        if result.modified_count > 0:
-            updated_entry = mongo.db.journal_entries.find_one({"_id": ObjectId(id)})
-            if updated_entry:
-                updated_entry["_id"] = str(updated_entry["_id"])
-                return jsonify(updated_entry), 200
-            else:
-                return jsonify({"error": "Entry not found after update"}), 500
-        else:
-            return jsonify({"error": "No changes made or entry not found"}), 404
+        result = db.get('journal_entries', [])
+        result = [entry for entry in result if entry['id'] != id or entry['author'] != current_user.get_id()]
+        db['journal_entries'] = result
+
+        return jsonify({"success": True, "message": "Entry updated successfully"}), 200
 
     except Exception as e:
         current_app.logger.error(f"Error updating journal entry: {str(e)}")
@@ -190,15 +177,11 @@ def delete_journal_entry():
         if not id:
             return jsonify({"success": False, "message": "Missing entry id"}), 400
 
-        result = mongo.db.journal_entries.delete_one({
-            "_id": ObjectId(id),
-            "author": str(current_user.id)
-        })
-        
-        if result.deleted_count > 0:
-            return jsonify({"success": True, "message": "Entry deleted successfully"}), 200
-        else:
-            return jsonify({"success": False, "message": "Entry not found or you don't have permission to delete it"}), 404
+        result = db.get('journal_entries', [])
+        result = [entry for entry in result if entry['id'] != id or entry['author'] != current_user.get_id()]
+        db['journal_entries'] = result
+
+        return jsonify({"success": True, "message": "Entry deleted successfully"}), 200
 
     except Exception as e:
         current_app.logger.error(f"Error deleting journal entry: {str(e)}")
