@@ -52,7 +52,7 @@ def get_notes():
             note = db[key]
             author = note.get('author', 'Anonymous')
             notes_data.append({
-                '_id': key.split(':')[1],
+                'id': key.split(':')[1],
                 'data': note['data'],
                 'date': note['date'],
                 'author': author
@@ -106,7 +106,7 @@ def get_journal_entries(country):
             author_user = User.find_by_id(entry["author"])
             author_email = author_user.email if author_user else "Unknown"
             entry_dict = {
-                "_id": entry["_id"],
+                "id": entry["id"],
                 "content": entry["content"],
                 "author_id": entry["author"],
                 "author_email": author_email,
@@ -135,7 +135,7 @@ def create_journal_entry():
     try:
         entry = JournalEntry.create(content, str(current_user.id), country, photo)
         return jsonify({
-            "_id": entry.id,
+            "id": entry.id,
             "content": entry.content,
             "author_id": entry.author,
             "author_email": current_user.email,
@@ -205,7 +205,7 @@ def create_note():
         return jsonify({
             'success': True,
             'note': {
-                '_id': new_note.id,
+                'id': new_note.id,
                 'data': new_note.data,
                 'date': new_note.date.isoformat(),
                 'author': current_user.first_name

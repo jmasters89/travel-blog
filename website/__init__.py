@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_login import LoginManager
 import os
 from datetime import datetime
 
@@ -7,8 +8,9 @@ def create_app():
     app.config["SECRET_KEY"] = "secret"  # Replace with your own secret key
     
     # Ensure the upload folder exists
-    if not os.path.exists(app.root_path, 'static/uploads'):
-        os.makedirs(app.root_path, 'static/uploads')
+    uploads_path = os.path.join(app.root_path, 'static/uploads')
+    if not os.path.exists(uploads_path):
+        os.makedirs(uploads_path)
 
     from .views import views
     from .auth import auth

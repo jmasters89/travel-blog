@@ -4,6 +4,11 @@ from datetime import datetime, timezone
 from werkzeug.utils import secure_filename
 import os
 import uuid
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class Note:
     def __init__(self, data, user_id, author):
@@ -18,6 +23,7 @@ class Note:
         note = cls(data, user_id, author)
         note_key = f"note:{note.id}"
         db[note_key] = {
+            'id': note.id,
             'data': note.data,
             'date': note.date.isoformat(),
             'user_id': note.user_id,
@@ -84,7 +90,7 @@ class User(UserMixin):
 class Post:
     def __init__(self, content, user_id, image_filename=None):
         self.content = content
-        self.date = datetime.utcnow()
+        self.date = datetime.now(timezone.utc)
         self.user_id = user_id
         self.image_filename = image_filename
         self.id = str(uuid.uuid4())
@@ -94,6 +100,7 @@ class Post:
         post = cls(content, user_id, image_filename)
         post_key = f"post:{post.id}"
         db[post_key] = {
+            'id': post.id,
             'content': post.content,
             'date': post.date.isoformat(),
             'user_id': post.user_id,
@@ -117,7 +124,7 @@ class JournalEntry:
         self.content = content
         self.author = author
         self.country = country
-        self.timestamp = timestamp or datetime.utcnow()
+        self.timestamp = timestamp or datetime.now(timezone.utc)
         self.photo_filename = photo_filename
         self.id = str(uuid.uuid4())
 
@@ -126,12 +133,13 @@ class JournalEntry:
         photo_filename = None
         if photo:
             filename = secure_filename(photo.filename)
-            photo_filename = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{filename}"
+            photo_filename = f"{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{filename}"
             photo.save(os.path.join('website', 'static', 'uploads', photo_filename))
 
         entry = cls(content, author, country, photo_filename=photo_filename)
         entry_key = f"journal_entry:{entry.id}"
         db[entry_key] = {
+            'id': entry.id,
             'content': entry.content,
             'author': entry.author,
             'country': entry.country,
@@ -147,6 +155,13 @@ class JournalEntry:
             if key.startswith('journal_entry:'):
                 entry_data = db[key]
                 if entry_data['country'] == country:
-                    entries.append(entry_data)
+                    try:
+                        # Add logging to check data before processing
+                        logger.debug(f"Processing entry: {entry_data}")
+                        # Convert timestamp back to datetime object
+                        entry_data['timestamp'] = datetime.fromisoformat(entry_data['timestamp'])
+                        entries.append(entry_data)
+                    except Exception as e:
+                        logger.error(f"Error processing entry {entry_data['id']}: {e}")
         entries.sort(key=lambda x: x['timestamp'], reverse=True)
         return entries

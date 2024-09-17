@@ -1,0 +1,15 @@
+modules = ["python-3.12", "nodejs-20", "web"]
+run = "python main.py"
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "python main.py"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[objectStorage]
+defaultBucketID = "replit-objstore-7305e14e-d20c-4bb2-a2e0-e49d7722e7a5"

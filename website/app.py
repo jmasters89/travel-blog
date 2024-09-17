@@ -5,9 +5,12 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length, ValidationError
 from flask_bootstrap import Bootstrap
+from replit import db
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secretkey'
+app.config['REPLIT_DB'] = db  # Configure Replit DB
+
 Bootstrap(app)
 
 class LoginForm(FlaskForm):
