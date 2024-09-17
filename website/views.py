@@ -1,8 +1,7 @@
 from flask import Blueprint, render_template, flash, request, jsonify, current_app, redirect, url_for
 from flask_login import login_required, current_user
 from .models import Note, Post, User, JournalEntry  # Add JournalEntry here
-from . import mongo
-from bson import ObjectId
+from replit import db
 import json
 import logging
 from werkzeug.utils import secure_filename
@@ -31,15 +30,13 @@ def home():
 def delete_note():
     try:
         note_id = request.json.get('noteId')
-        print("Received delete request for note ID:", note_id)  # Add this line
         if not note_id:
             return jsonify({'success': False, 'error': 'No note ID provided'}), 400
 
-        
-        object_id = ObjectId(note_id)
-
-        result = mongo.db.notes.delete_one({'_id': object_id, 'user_id': ObjectId(current_user.get_id())})
-        if result.deleted_count == 1:
+        note_key = f'note:{note_id}'
+        note_data = db.get(note_key)
+        if note_data and note_data['user_id'] == current_user.get_id():
+            del db[note_key]
             return jsonify({'success': True})
         else:
             return jsonify({'success': False, 'error': 'Note not found or not authorized'}), 404
@@ -49,21 +46,20 @@ def delete_note():
 
 @views.route('/get-notes', methods=['GET'])
 def get_notes():
-    notes = list(mongo.db.notes.find().sort("date", -1).limit(100))
-    note_list = []
-    for note in notes:
-        author = 'Anonymous'
-        if 'user_id' in note:
-            user = User.find_by_id(str(note['user_id']))
-            if user:
-                author = user.first_name
-        note_list.append({
-            '_id': str(note['_id']),
-            'data': note['data'],
-            'date': note['date'].isoformat(),
-            'author': author
-        })
-    return jsonify(note_list)
+    notes_data = []
+    for key in db.keys():
+        if key.startswith('note:'):
+            note = db[key]
+            author = note.get('author', 'Anonymous')
+            notes_data.append({
+                '_id': key.split(':')[1],
+                'data': note['data'],
+                'date': note['date'],
+                'author': author
+            })
+    # Sort notes by date in descending order
+    notes_data.sort(key=lambda x: x['date'], reverse=True)
+    return jsonify(notes_data)
 
 @views.route('/create-post', methods=['GET', 'POST'])
 @login_required
@@ -110,13 +106,13 @@ def get_journal_entries(country):
             author_user = User.find_by_id(entry["author"])
             author_email = author_user.email if author_user else "Unknown"
             entry_dict = {
-                "_id": str(entry["_id"]),
+                "_id": entry["_id"],
                 "content": entry["content"],
                 "author_id": entry["author"],
                 "author_email": author_email,
                 "country": entry["country"],
                 "timestamp": entry["timestamp"].isoformat(),
-                "is_author": current_user.is_authenticated and str(entry["author"]) == str(current_user.id),
+                "is_author": current_user.is_authenticated and entry["author"] == current_user.id,
                 "photo": f"/static/uploads/{entry['photo_filename']}" if entry.get('photo_filename') else None
             }
             result.append(entry_dict)
@@ -139,7 +135,7 @@ def create_journal_entry():
     try:
         entry = JournalEntry.create(content, str(current_user.id), country, photo)
         return jsonify({
-            "_id": str(entry.id),
+            "_id": entry.id,
             "content": entry.content,
             "author_id": entry.author,
             "author_email": current_user.email,
@@ -162,20 +158,14 @@ def update_journal_entry():
         if not id or not content:
             return jsonify({"error": "Missing id or content"}), 400
 
-        result = mongo.db.journal_entries.update_one(
-            {"_id": ObjectId(id), "author": str(current_user.id)},
-            {"$set": {"content": content}}
-        )
-        
-        if result.modified_count > 0:
-            updated_entry = mongo.db.journal_entries.find_one({"_id": ObjectId(id)})
-            if updated_entry:
-                updated_entry["_id"] = str(updated_entry["_id"])
-                return jsonify(updated_entry), 200
-            else:
-                return jsonify({"error": "Entry not found after update"}), 500
+        entry_key = f"journal_entry:{id}"
+        entry_data = db.get(entry_key)
+        if entry_data and entry_data['author'] == str(current_user.id):
+            entry_data['content'] = content
+            db[entry_key] = entry_data
+            return jsonify(entry_data), 200
         else:
-            return jsonify({"error": "No changes made or entry not found"}), 404
+            return jsonify({"error": "Entry not found or not authorized"}), 404
 
     except Exception as e:
         current_app.logger.error(f"Error updating journal entry: {str(e)}")
@@ -190,12 +180,10 @@ def delete_journal_entry():
         if not id:
             return jsonify({"success": False, "message": "Missing entry id"}), 400
 
-        result = mongo.db.journal_entries.delete_one({
-            "_id": ObjectId(id),
-            "author": str(current_user.id)
-        })
-        
-        if result.deleted_count > 0:
+        entry_key = f"journal_entry:{id}"
+        entry_data = db.get(entry_key)
+        if entry_data and entry_data['author'] == str(current_user.id):
+            del db[entry_key]
             return jsonify({"success": True, "message": "Entry deleted successfully"}), 200
         else:
             return jsonify({"success": False, "message": "Entry not found or you don't have permission to delete it"}), 404
@@ -217,7 +205,7 @@ def create_note():
         return jsonify({
             'success': True,
             'note': {
-                '_id': str(new_note.id),
+                '_id': new_note.id,
                 'data': new_note.data,
                 'date': new_note.date.isoformat(),
                 'author': current_user.first_name
