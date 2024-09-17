@@ -44,13 +44,13 @@ function createNote(content) {
       const noteList = document.getElementById("notes");
       const li = document.createElement("li");
       li.className = "list-group-item";
-      li.id = `note-${data.note._id}`;
+      li.id = `note-${data.note.id}`;
       li.innerHTML = `
         <div class="row align-items-center">
           <div class="col note-content">${data.note.data}</div>
           <div class="col-auto note-metadata">
             <small class="text-muted mr-2">${new Date(data.note.date).toLocaleString()}</small>
-            <button type="button" class="btn btn-danger btn-sm delete-btn" onclick="deleteNote('${data.note._id}')" title="Delete">
+            <button type="button" class="btn btn-danger btn-sm delete-btn" onclick="deleteNote('${data.note.id}')" title="Delete">
               <i class="fas fa-trash-alt"></i>
             </button>
           </div>
@@ -96,17 +96,17 @@ document.addEventListener('DOMContentLoaded', function() {
       .then((data) => {
         noteList.innerHTML = "";
         data.forEach((note) => {
-          console.log("Rendering note with ID:", note._id);
+          console.log("Rendering note with ID:", note.id);
           const li = document.createElement("li");
           li.className = "list-group-item";
-          li.id = `note-${note._id}`;
+          li.id = `note-${note.id}`;
           li.innerHTML = `
             <div class="row align-items-center">
               <div class="col note-content">${note.data}</div>
               <div class="col-auto note-metadata">
                 <small class="text-muted mr-2">${new Date(note.date).toLocaleString()}</small>
                 <small class="text-muted">by ${note.author}</small>
-                <button type="button" class="btn btn-danger btn-sm delete-btn" onclick="deleteNote('${note._id}')" title="Delete">
+                <button type="button" class="btn btn-danger btn-sm delete-btn" onclick="deleteNote('${note.id}')" title="Delete">
                   <i class="fas fa-trash-alt"></i>
                 </button>
               </div>

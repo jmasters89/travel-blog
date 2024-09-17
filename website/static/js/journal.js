@@ -98,7 +98,7 @@ window.updateJournalEntry = function(entryId, newContent) {
   })
   .then(({status, body}) => {
     console.log('Response body:', body);
-    if (status === 200 && body._id) {
+    if (status === 200 && body.id) {
       const entryElement = document.getElementById(`entry-${entryId}`);
       entryElement.querySelector('.card-text').textContent = newContent;
       window.restoreButtons(entryId);
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function createEntryElement(entry) {
     console.log("Creating entry element:", entry);
     const entryDiv = document.createElement('div');
-    entryDiv.id = `entry-${entry._id}`;
+    entryDiv.id = `entry-${entry.id}`;
     entryDiv.className = 'card mb-3 journal-entry';
     entryDiv.innerHTML = `
       <div class="card-body">
@@ -244,10 +244,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <p class="card-text">${entry.content}</p>
         ${entry.is_author ? `
           <div class="btn-container">
-            <button class="btn btn-primary edit-btn" onclick="editJournalEntry('${entry._id}')">
+            <button class="btn btn-primary edit-btn" onclick="editJournalEntry('${entry.id}')">
               <i class="fas fa-edit"></i> Edit
             </button>
-            <button class="btn btn-danger delete-btn" onclick="deleteJournalEntry('${entry._id}')">
+            <button class="btn btn-danger delete-btn" onclick="deleteJournalEntry('${entry.id}')">
               <i class="fas fa-trash-alt"></i> Delete
             </button>
           </div>

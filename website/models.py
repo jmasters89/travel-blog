@@ -158,9 +158,18 @@ class JournalEntry:
                     try:
                         # Add logging to check data before processing
                         logger.debug(f"Processing entry: {entry_data}")
-                        # Convert timestamp back to datetime object
-                        entry_data['timestamp'] = datetime.fromisoformat(entry_data['timestamp'])
-                        entries.append(entry_data)
+
+                        # Create a new dictionary to avoid mutating the original
+                        processed_entry = {
+                            'id': entry_data['id'],
+                            'content': entry_data['content'],
+                            'author': entry_data['author'],
+                            'country': entry_data['country'],
+                            'timestamp': datetime.fromisoformat(entry_data['timestamp']),  # Ensure timestamp is converted correctly
+                            'photo_filename': entry_data['photo_filename']
+                        }
+
+                        entries.append(processed_entry)
                     except Exception as e:
                         logger.error(f"Error processing entry {entry_data['id']}: {e}")
         entries.sort(key=lambda x: x['timestamp'], reverse=True)
